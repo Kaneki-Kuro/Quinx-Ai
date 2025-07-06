@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 require('dotenv').config();
 
 const client = new Client({
@@ -12,9 +12,10 @@ const client = new Client({
   partials: ['CHANNEL']
 });
 
-const openai = new OpenAIApi(new Configuration({
+// ✅ Fixed OpenAI usage
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-}));
+});
 
 client.once('ready', () => {
   console.log(`🤖 Logged in as ${client.user.tag}`);
@@ -22,12 +23,10 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-
-  // ✅ Only reply in this specific channel
   if (message.channel.id !== '1391264918870692002') return;
 
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: "You are a helpful Discord assistant." },
@@ -35,7 +34,7 @@ client.on('messageCreate', async (message) => {
       ],
     });
 
-    const reply = response.data.choices[0].message.content;
+    const reply = response.choices[0].message.content;
     message.reply(reply);
   } catch (err) {
     console.error("❌ OpenAI error:", err);
