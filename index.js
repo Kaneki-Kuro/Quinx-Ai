@@ -1,5 +1,17 @@
-require('./keepAlive'); // Keep-alive web server
+// 🔄 Express keep-alive server (for UptimeRobot or similar)
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
 
+app.get('/', (req, res) => {
+  res.send('🤖 Quinx AI Bot is alive!');
+});
+
+app.listen(port, () => {
+  console.log(`🌐 Keep-alive server running on port ${port}`);
+});
+
+// 🤖 Discord bot setup
 const { Client, GatewayIntentBits } = require('discord.js');
 const OpenAI = require('openai');
 require('dotenv').config();
