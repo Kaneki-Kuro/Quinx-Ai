@@ -1,3 +1,5 @@
+require('./keepAlive'); // Keep-alive web server
+
 const { Client, GatewayIntentBits } = require('discord.js');
 const OpenAI = require('openai');
 require('dotenv').config();
@@ -29,11 +31,11 @@ client.on('messageCreate', async (message) => {
 
     const response = await openai.chat.completions.create({
       model: "llama3-8b-8192",
-      max_tokens: 60, // shorter replies
+      max_tokens: 60,
       messages: [
         {
           role: "system",
-          content: "You're a chill, friendly Discord user. Always reply in 1-2 short, casual sentences. Use slang or emojis if needed. Never sound like an AI, and don't write long paragraphs.",
+          content: "You're a chill, friendly Discord user. Always reply in 1–2 short, casual sentences. Use slang or emojis if needed. Never sound like an AI, and don't write long paragraphs.",
         },
         {
           role: "user",
@@ -43,10 +45,8 @@ client.on('messageCreate', async (message) => {
     });
 
     const reply = response.choices?.[0]?.message?.content?.trim();
-
     if (!reply) return;
 
-    // Just one short reply, no need for chunk splitting
     await message.reply(reply);
 
   } catch (err) {
