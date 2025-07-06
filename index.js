@@ -7,9 +7,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages,
   ],
-  partials: ['CHANNEL'],
 });
 
 const openai = new OpenAI({
@@ -29,11 +27,11 @@ client.on('messageCreate', async (message) => {
 
     const response = await openai.chat.completions.create({
       model: "llama3-8b-8192",
-      max_tokens: 60, // shorter replies
+      max_tokens: 150,
       messages: [
         {
           role: "system",
-          content: "You're a chill, friendly Discord user. Always reply in 1-2 short, casual sentences. Use slang or emojis if needed. Never sound like an AI, and don't write long paragraphs.",
+          content: "You're a helpful and casual Discord assistant. Keep responses short and human-like.",
         },
         {
           role: "user",
@@ -46,14 +44,18 @@ client.on('messageCreate', async (message) => {
 
     if (!reply) return;
 
-    // Just one short reply, no need for chunk splitting
-    await message.reply(reply);
-
+    if (reply.length > 2000) {
+      const chunks = reply.match(/[\s\S]{1,2000}/g);
+      await message.reply(chunks[0]);
+      for (let i = 1; i < chunks.length; i++) {
+        await message.channel.send(chunks[i]);
+      }
+    } else {
+      await message.reply(reply);
+    }
   } catch (err) {
     console.error("❌ AI error:", err);
-    if (!message.author.bot) {
-      message.reply("Oops, I can't respond right now 😔");
-    }
+    message.reply("Sorry, I couldn't respond right now.");
   }
 });
 
