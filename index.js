@@ -1,4 +1,4 @@
-// 🔄 Express keep-alive server (for UptimeRobot or similar)
+// 🌐 EXPRESS SERVER — For keeping the bot alive 24/7
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,7 +11,7 @@ app.listen(port, () => {
   console.log(`🌐 Keep-alive server running on port ${port}`);
 });
 
-// 🤖 Discord bot setup
+// 🤖 DISCORD BOT — Chat AI setup
 const { Client, GatewayIntentBits } = require('discord.js');
 const OpenAI = require('openai');
 require('dotenv').config();
@@ -27,7 +27,7 @@ const client = new Client({
 });
 
 const openai = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY, // use your Groq API key
   baseURL: 'https://api.groq.com/openai/v1',
 });
 
@@ -43,7 +43,7 @@ client.on('messageCreate', async (message) => {
 
     const response = await openai.chat.completions.create({
       model: "llama3-8b-8192",
-      max_tokens: 60,
+      max_tokens: 60, // short replies
       messages: [
         {
           role: "system",
