@@ -7,7 +7,9 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
   ],
+  partials: ['CHANNEL'],
 });
 
 const openai = new OpenAI({
@@ -16,11 +18,12 @@ const openai = new OpenAI({
 });
 
 client.once('ready', () => {
-  console.log(`🤖 Logged in as ${client.user.tag}`);
+  console.log(🤖 Logged in as ${client.user.tag});
 });
 
 client.on('messageCreate', async (message) => {
-  if (message.author.bot || message.channel.id !== '1391264918870692002') return;
+  if (message.author.bot) return;
+  if (message.channel.id !== '1391264918870692002') return;
 
   try {
     await message.channel.sendTyping();
@@ -31,7 +34,7 @@ client.on('messageCreate', async (message) => {
       messages: [
         {
           role: "system",
-          content: "You're a helpful and casual Discord assistant. Keep responses short and human-like.",
+          content: "You're a human-like, friendly Discord bot. Respond casually, briefly, and kindly. Sound like a real friend.",
         },
         {
           role: "user",
@@ -44,8 +47,9 @@ client.on('messageCreate', async (message) => {
 
     if (!reply) return;
 
+    // If it's too long, split and send once with mention, others without
     if (reply.length > 2000) {
-      const chunks = reply.match(/[\s\S]{1,2000}/g);
+      const chunks = reply.match(/[\s\S]{1,2000}/g) || [];
       await message.reply(chunks[0]);
       for (let i = 1; i < chunks.length; i++) {
         await message.channel.send(chunks[i]);
@@ -53,9 +57,12 @@ client.on('messageCreate', async (message) => {
     } else {
       await message.reply(reply);
     }
+
   } catch (err) {
     console.error("❌ AI error:", err);
-    message.reply("Sorry, I couldn't respond right now.");
+    if (!message.author.bot) {
+      message.reply("Sorry, I couldn't respond right now.");
+    }
   }
 });
 
