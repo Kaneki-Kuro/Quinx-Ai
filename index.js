@@ -34,7 +34,7 @@ client.on('messageCreate', async (message) => {
       messages: [
         {
           role: "system",
-          content: "You are a helpful and friendly Discord assistant. Keep responses short, casual, and talk like a real user, not a robot.",
+          content: "You're a human-like, friendly Discord bot. Respond casually, briefly, and kindly. Sound like a real friend.",
         },
         {
           role: "user",
@@ -43,23 +43,26 @@ client.on('messageCreate', async (message) => {
       ],
     });
 
-    const reply = response.choices[0].message.content.trim();
+    const reply = response.choices?.[0]?.message?.content?.trim();
 
-    // ✅ Only split if message is longer than 2000 chars
+    if (!reply) return;
+
+    // If it's too long, split and send once with mention, others without
     if (reply.length > 2000) {
       const chunks = reply.match(/[\s\S]{1,2000}/g) || [];
-      await message.reply(chunks[0]); // First chunk with mention
+      await message.reply(chunks[0]);
       for (let i = 1; i < chunks.length; i++) {
         await message.channel.send(chunks[i]);
       }
     } else {
-      // ✅ Short enough — reply once
       await message.reply(reply);
     }
 
   } catch (err) {
     console.error("❌ AI error:", err);
-    message.reply("Sorry, I couldn't respond right now.");
+    if (!message.author.bot) {
+      message.reply("Sorry, I couldn't respond right now.");
+    }
   }
 });
 
