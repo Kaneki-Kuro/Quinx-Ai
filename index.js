@@ -22,19 +22,18 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (message.channel.id !== '1391264918870692002') return;
+  if (message.author.bot || message.channel.id !== '1391264918870692002') return;
 
   try {
     await message.channel.sendTyping();
 
     const response = await openai.chat.completions.create({
       model: "llama3-8b-8192",
-      max_tokens: 150,
+      max_tokens: 60, // shorter replies
       messages: [
         {
           role: "system",
-          content: "You're a human-like, friendly Discord bot. Respond casually, briefly, and kindly. Sound like a real friend.",
+          content: "You're a chill, friendly Discord user. Always reply in 1-2 short, casual sentences. Use slang or emojis if needed. Never sound like an AI, and don't write long paragraphs.",
         },
         {
           role: "user",
@@ -47,21 +46,13 @@ client.on('messageCreate', async (message) => {
 
     if (!reply) return;
 
-    // If it's too long, split and send once with mention, others without
-    if (reply.length > 2000) {
-      const chunks = reply.match(/[\s\S]{1,2000}/g) || [];
-      await message.reply(chunks[0]);
-      for (let i = 1; i < chunks.length; i++) {
-        await message.channel.send(chunks[i]);
-      }
-    } else {
-      await message.reply(reply);
-    }
+    // Just one short reply, no need for chunk splitting
+    await message.reply(reply);
 
   } catch (err) {
     console.error("❌ AI error:", err);
     if (!message.author.bot) {
-      message.reply("Sorry, I couldn't respond right now.");
+      message.reply("Oops, I can't respond right now 😔");
     }
   }
 });
