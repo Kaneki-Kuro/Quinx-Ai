@@ -1,79 +1,63 @@
-// 🌐 EXPRESS SERVER — For keeping the bot alive 24/7
-const express = require('express');
-const app = express();
-const port = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-  res.send('🤖 Quinx AI Bot is alive!');
-});
-
-app.listen(port, () => {
-  console.log(`🌐 Keep-alive server running on port ${port}`);
-});
-
-// 🤖 DISCORD BOT — Chat AI setup
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const OpenAI = require('openai');
+const { Client, GatewayIntentBits, Partials, Events } = require('discord.js');
 require('dotenv').config();
+const groq = require('groq-sdk');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent
   ],
-  partials: [Partials.Channel],
+  partials: [Partials.Channel]
 });
 
-const openai = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
+// GROQ Setup
+const groqClient = new groq.Groq({
+  apiKey: process.env.GROQ_API_KEY
 });
 
-client.once('ready', () => {
-  console.log(`🤖 Logged in as ${client.user.tag}`);
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Bot logged in as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async (message) => {
-  if (message.author.bot || message.channel.id !== '1391264918870692002') return;
+client.on(Events.MessageCreate, async (message) => {
+  if (message.author.bot) return;
+  if (!message.mentions.has(client.user)) return;
 
-  console.log(`[DEBUG] Message from ${message.author.tag}: ${message.content}`);
+  const userMessage = message.content.replace(/<@!?(\d+)>/, '').trim();
+
+  if (!userMessage) {
+    return message.reply("Please ask me something.");
+  }
 
   try {
     await message.channel.sendTyping();
 
-    const response = await openai.chat.completions.create({
-      model: "llama3-8b-8192",
-      max_tokens: 60,
+    const chatCompletion = await groqClient.chat.completions.create({
       messages: [
-        {
-          role: "system",
-          content: "You're a chill, friendly Discord user. Always reply in 1–2 short, casual sentences. Use slang or emojis if needed. Never sound like an AI, and don't write long paragraphs.",
-        },
-        {
-          role: "user",
-          content: message.content,
-        },
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: userMessage }
       ],
+      model: "mixtral-8x7b-32768"
     });
 
-    const reply = response.choices?.[0]?.message?.content?.trim();
-    if (reply) {
-      await message.reply(reply);
+    const botReply = chatCompletion.choices[0]?.message?.content;
+
+    if (!botReply) {
+      return message.reply("❌ I couldn't generate a response.");
     }
 
-  } catch (err) {
-    console.error("❌ AI error:", err);
-    if (!message.author.bot) {
-      message.reply("Oops, I can't respond right now 😔");
-    }
+    await message.reply(botReply);
+  } catch (error) {
+    console.error("💥 Error generating response:", error);
+    await message.reply("Something went wrong while generating my response.");
   }
 });
 
-// ✅ Login with error handler
-client.login(process.env.DISCORD_TOKEN).then(() => {
-  console.log("✅ Discord bot login success!");
-}).catch((err) => {
-  console.error("❌ Discord login failed:", err);
-});
+client.login(process.env.DISCORD_TOKEN)
+  .then(() => {
+    console.log("✅ Discord bot login success!");
+  })
+  .catch((err) => {
+    console.error("❌ Discord login failed:", err);
+  });
